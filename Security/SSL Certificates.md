@@ -27,7 +27,7 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 3. This step is optional if you want to view the certificate's content.
 
     ```bash
-    openssl genrsa -aes256 -out ca-key.pem 4096
+    openssl x509 -in ca.pem -text
     ```
 
 ### Generate a Certificate
