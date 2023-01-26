@@ -51,7 +51,7 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 3. Create a file with all the alternative names
 
     ```bash
-    echo "subjectAltName=DNS:your.dns,IP:172.16.1.4,IP:fe80::b3df:fd02:8d8f:49c5" >> extfilecnf
+    echo "subjectAltName=DNS:your.dns,DNS:*.your.dns,IP:172.16.1.4,IP:fe80::b3df:fd02:8d8f:49c5" >> extfilecnf
     echo "extendedKeyUsage=serverAuth" >> extFile.cnf
     ```
 
@@ -65,9 +65,16 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
     openssl x509 -req -sha256 -days 365 -in cert.csr -CA ca.pem -CAkey ca-key.pem -out cert.pem -extfile extfile.cnf -CAcreateserial
     ```
 
-5. Verify certificates
+5. Verify the certificates
     ```bash
     openssl verify -CAfile ca.pem -verbose cert.pem
+    ```
+
+6. Create fullchain.pem from cert.pem and ca.pem
+   
+    ```powershell
+    cat path_to_cert.pem > fullchain.pem
+    cat path_to_ca.pem >> .\fullchain.pem
     ```
 
 ### Convert Certs
@@ -96,3 +103,21 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
     ```bash
     certutil.exe -addstore root C:\ca.pem
     ```
+### Install certificate in NGINX
+
+- Edit NGINX configuration file
+
+    ```nginx
+    server {
+        listen              443 ssl http2;
+        listen              [::]:443 ssl http2;
+        server_name         domain.local;
+
+        ssl_certificate     path_to_fullchain.pem;
+        ssl_certificate_key path_to_cert-key.pem;
+        
+        # your extra configuration...
+    }
+    ```
+
+- Restart the NGINX server
