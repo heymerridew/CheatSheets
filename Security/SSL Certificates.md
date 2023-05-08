@@ -10,7 +10,7 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 
     > Enter a strong PEM pass phrase and save in a secure place.
 
-    ```bash
+    ```powershell
     openssl genrsa -aes256 -out ca-key.pem 4096
     ```
 
@@ -20,13 +20,13 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 
     > When you run the command enter the information that will be incorporated into your certificate request.
 
-    ```bash
+    ```powershell
     openssl req -new -x509 -sha256 -days 365 -key ca-key.pem -out ca.pem
     ```
 
 3. This step is optional if you want to view the certificate's content.
 
-    ```bash
+    ```powershell
     openssl x509 -in ca.pem -text
     ```
 
@@ -36,7 +36,7 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 
     > In this case we do not need to protect it with a pass phrase.
 
-    ```bash
+    ```powershell
     openssl genrsa -out cert-key.pem 4096
     ```
 
@@ -44,29 +44,36 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 
     > You can find the subject in the certificate's content.
 
-    ```bash
-    openssl req -new -sha256 -subj "/CN=yourcn" -key cert-key.pem -out cert.csr
+    ```powershell
+    openssl req -new -sha256 -subj "/CN=yourcn_or_your_name" -key cert-key.pem -out cert.csr
     ```
 
-3. Create a file with all the alternative names
+3. Create a file `openssl.config` with all the alternative names and the basic configuration
 
-    ```bash
-    echo "subjectAltName=DNS:your.dns,DNS:*.your.dns,IP:172.16.1.4,IP:fe80::b3df:fd02:8d8f:49c5" >> extfilecnf
-    echo "extendedKeyUsage=serverAuth" >> extFile.cnf
-    ```
+        powershell
+        basicConstraints       = CA:FALSE
+        authorityKeyIdentifier = keyid:always, issuer:always
+        keyUsage               = nonRepudiation, digitalSignature, keyEncipherment, dataEncipherment
+        subjectAltName         = @alt_names
 
+        [ alt_names ]
+        DNS.1                  = test.local
+        DNS.2                  = *.test.local
+        IP.1                   = your-ipv4-server  # optional
+        IP.1                   = your-ipv6-server  # optional
+    
 4. Create the certificate
 
     > You should specify the desire **-days** for expiration.
 
     > You’ll need to supply the CA’s passphrase to complete the process.
 
-    ```bash
-    openssl x509 -req -sha256 -days 365 -in cert.csr -CA ca.pem -CAkey ca-key.pem -out cert.pem -extfile extfile.cnf -CAcreateserial
+    ```powershell
+    openssl x509 -req -sha256 -days 365 -in cert.csr -CA ca.pem -CAkey ca-key.pem -out cert.pem -extfile openssl.cnf -CAcreateserial
     ```
 
 5. Verify the certificates
-    ```bash
+    ```powershell
     openssl verify -CAfile ca.pem -verbose cert.pem
     ```
 
@@ -77,32 +84,6 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
     cat path_to_ca.pem >> .\fullchain.pem
     ```
 
-### Convert Certs
-
-| COMMAND                                                | CONVERSION         |
-| ------------------------------------------------------ | ------------------ |
-| `openssl x509 -outform der -in cert.pem -out cert.der` | **PEM** to **DER** |
-| `openssl x509 -inform der -in cert.der -out cert.pem`  | **DER** to **PEM** |
-| `openssl pkcs12 -in cert.pfx -out cert.pem -nodes`     | **PFX** to **PEM** |
-
-### Install the CA Cert as a trusted root CA
-
-#### Windows
-
--   Using PowerShell you can use this command (with admin permission):
-
-    ```powershell
-    Import-Certificate -FilePath "path_to_ca.pem" -CertStoreLocation Cert:\LocalMachine\Root
-    ```
-
-    -   In case you want to trust certificates only for the logged in user set
-        `-CertStoreLocation` to `Cert:\CurrentUser\Root` .
-
--   Using Command Prompt you can use this command:
-
-    ```bash
-    certutil.exe -addstore root C:\ca.pem
-    ```
 ### Install certificate in NGINX
 
 - Edit NGINX configuration file
@@ -121,3 +102,22 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
     ```
 
 - Restart the NGINX server
+
+### Install the CA Cert as a trusted root CA
+
+#### Windows
+
+-   Using PowerShell you can use this command (with admin permission):
+
+    ```powershell
+    Import-Certificate -FilePath "path_to_ca.pem" -CertStoreLocation Cert:\LocalMachine\Root
+    ```
+
+    -   In case you want to trust certificates only for the logged in user set
+        `-CertStoreLocation` to `Cert:\CurrentUser\Root` .
+
+-   Using Command Prompt you can use this command:
+
+    ```powershell
+    certutil.exe -addstore root C:\ca.pem
+    ```
