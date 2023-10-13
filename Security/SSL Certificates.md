@@ -50,7 +50,6 @@ An X.509 certificate is a digital certificate based on the widely accepted Inter
 
 3. Create a file `openssl.config` with all the alternative names and the basic configuration
 
-        powershell
         basicConstraints       = CA:FALSE
         authorityKeyIdentifier = keyid:always, issuer:always
         keyUsage               = nonRepudiation, digitalSignature, keyEncipherment, dataEncipherment
